@@ -47,9 +47,14 @@ cookie: "your-cookie-value"
 
 ### How to get the cookie
 
-1. Open [ollama.com/settings](https://ollama.com/settings) in your browser
-2. Open DevTools → Storage → Cookies
-3. Copy the value of `__Secure-session`
+1. Open [ollama.com/settings](https://ollama.com/settings) in your browser and log in
+2. Open DevTools (`F12` or `Cmd+Opt+I` on macOS)
+3. Go to the **Application** tab (Chrome/Edge) or **Storage** tab (Firefox)
+4. In the left sidebar, expand **Cookies** and click `ollama.com`
+5. Find the row named `__Secure-session`
+6. Double-click its **Value** column and copy it
+
+The cookie value is a long opaque string — it should look something like a JWT or base64-encoded token. Do not share it with anyone.
 
 ## How to update
 
