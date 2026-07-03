@@ -1,75 +1,75 @@
-# Instalación
+# Install
 
-## Requisitos previos
+## Prerequisites
 
 - OpenCode v1.17.8+ ([anomalyco/opencode](https://github.com/anomalyco/opencode))
-- Node.js o Bun (para compilar)
+- Node.js or Bun (for building)
 
-## Instalación rápida (desde código fuente)
+## Quick install (from source)
 
 ```bash
-git clone <url-de-tu-repo>
+git clone https://github.com/anibalardid/opencode-ollama-stats-plugin.git
 cd ollama-cloud-usage
 npm install
 npm run build
 opencode plugin -g "$(pwd)"
 ```
 
-Reiniciá OpenCode. Vas a ver una sección **Ollama Cloud** en la sidebar.
+Restart OpenCode. You'll see an **Ollama Cloud** section in the sidebar.
 
-## Configuración de la cookie
+## Cookie setup
 
-El plugin necesita tu cookie `__Secure-session` de [ollama.com/settings](https://ollama.com/settings).
+The plugin needs your `__Secure-session` cookie from [ollama.com/settings](https://ollama.com/settings).
 
-**Opción A — variable de entorno (recomendada):**
+**Option A — env var (recommended):**
 
 ```bash
-export OLLAMA_USAGE_COOKIE="valor-de-tu-cookie"
+export OLLAMA_USAGE_COOKIE="your-cookie-value"
 ```
 
-**Opción B — archivo de configuración:**
+**Option B — config file:**
 
-Creá `~/.config/opencode/opencode-quota/ollama-cloud.json`:
+Create `~/.config/opencode/opencode-quota/ollama-cloud.json`:
 
 ```json
 {
-  "cookie": "valor-de-tu-cookie"
+  "cookie": "your-cookie-value"
 }
 ```
 
-**Opción C — archivo legacy:**
+**Option C — legacy config file:**
 
-Creá `~/.config/ollama-usage/config.yaml`:
+Create `~/.config/ollama-usage/config.yaml`:
 
 ```yaml
-cookie: "valor-de-tu-cookie"
+cookie: "your-cookie-value"
 ```
 
-### Cómo obtener la cookie
+### How to get the cookie
 
-1. Abrí [ollama.com/settings](https://ollama.com/settings) en tu navegador
-2. Abrí DevTools → Storage → Cookies
-3. Copiá el valor de `__Secure-session`
+1. Open [ollama.com/settings](https://ollama.com/settings) in your browser
+2. Open DevTools → Storage → Cookies
+3. Copy the value of `__Secure-session`
 
-## Cómo actualizar
+## How to update
 
 ```bash
 cd ollama-cloud-usage
 git pull
 npm install
 npm run build
-# Reiniciá OpenCode
+# Restart OpenCode
 ```
 
-## Desinstalar
+## Uninstall
 
 ```bash
 opencode plugin -g "$(pwd)"
-# Después borrá la carpeta
+# Then delete the folder
 rm -rf ollama-cloud-usage
 ```
 
-## Requisitos
+## Requirements
 
 - macOS / Linux
-- Una cuenta activa de Ollama Cloud con una cookie de sesión válida
+- An active Ollama Cloud account with a valid session cookie

@@ -1,6 +1,6 @@
 # Ollama Cloud Usage
 
-Plugin de sidebar para OpenCode que muestra el uso de **Ollama Cloud** (sesión y semanal) — obtenido desde [ollama.com/settings](https://ollama.com/settings).
+OpenCode sidebar plugin that shows your **Ollama Cloud** session and weekly usage — scraped from [ollama.com/settings](https://ollama.com/settings).
 
 ```
 Ollama Cloud (pro)
@@ -12,24 +12,26 @@ Weekly    69.5% used
 Reset in 3d
 ```
 
-## Instalación
+## Install
 
-Ver [INSTALL.md](./INSTALL.md) para instrucciones de instalación y configuración de la cookie.
+See [INSTALL.md](./INSTALL.md) for setup and cookie configuration instructions.
 
-## Cómo funciona
+> [Leer en español](./README.es.md) · [Instalación en español](./INSTALL.es.md)
 
-El plugin obtiene tu página de configuración de Ollama Cloud usando la cookie `__Secure-session` y parsea el HTML para extraer:
+## How it works
 
-- **Uso de sesión** — porcentaje usado en la ventana actual
-- **Uso semanal** — porcentaje usado en la ventana semanal
-- **Tiempos de reinicio** — cuándo se reinicia cada ventana (mostrado como tiempo relativo)
-- **Plan** — tu plan (Pro, etc.)
+The plugin fetches your Ollama Cloud settings page using a `__Secure-session` cookie and parses the HTML for:
 
-Se actualiza cada 60 segundos y también con eventos de actividad de sesión.
+- **Session usage** — percentage used in the current session window
+- **Weekly usage** — percentage used in the current weekly window
+- **Reset times** — when each window resets (shown as relative time)
+- **Plan tier** — your plan (Pro, etc.)
 
-### Si no hay cookie configurada
+It refreshes every 60 seconds and also on session activity events.
 
-La sidebar muestra un mensaje de ayuda con las rutas e instrucciones exactas:
+### If no cookie is configured
+
+The sidebar shows a help message with the exact paths and instructions to set it up:
 
 ```
 ⚠ Ollama Cloud
@@ -42,25 +44,25 @@ or create:
   → {"cookie":"..."}
 ```
 
-## Fuentes de cookie (en orden de prioridad)
+## Cookie sources (checked in order)
 
-| Fuente | Ubicación |
-|--------|-----------|
-| Variable de entorno | `OLLAMA_USAGE_COOKIE` |
-| Archivo JSON | `~/.config/opencode/opencode-quota/ollama-cloud.json` |
-| Archivo YAML | `~/.config/ollama-usage/config.yaml` |
-| YAML legacy | `~/.ollama-usage/config.yaml` |
+| Source | Location |
+|--------|----------|
+| Env var | `OLLAMA_USAGE_COOKIE` |
+| JSON config | `~/.config/opencode/opencode-quota/ollama-cloud.json` |
+| YAML config | `~/.config/ollama-usage/config.yaml` |
+| Legacy YAML | `~/.ollama-usage/config.yaml` |
 
-## Archivos
+## Files
 
-| Archivo | Propósito |
-|---------|-----------|
-| `index.tsx` | Código fuente del plugin (JSX + Solid.js) |
-| `package.json` | Manifiesto npm |
-| `tsup.config.ts` | Configuración de build |
-| `tsconfig.json` | Configuración de TypeScript |
-| `dist/` | Salida compilada (cargada por OpenCode) |
+| File | Purpose |
+|------|---------|
+| `index.tsx` | Plugin source (JSX + Solid.js) |
+| `package.json` | npm package manifest |
+| `tsup.config.ts` | Build config |
+| `tsconfig.json` | TypeScript config |
+| `dist/` | Built output (loaded by OpenCode) |
 
-## Licencia
+## License
 
 MIT
