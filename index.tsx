@@ -98,6 +98,8 @@ interface UsageData {
   sessionReset?: string
   weeklyReset?: string
   planTier?: string
+  balance?: string
+  autoReload?: boolean
   sessionModels?: { name: string; requests: number; percent: number }[]
   weeklyModels?: { name: string; requests: number; percent: number }[]
 }
@@ -143,6 +145,11 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   const planMatch = html.match(planRe)
   const planTier = planMatch ? planMatch[1].trim() : undefined
 
+  // Balance and auto-reload
+  const balanceM = html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/)
+  const balance = balanceM ? "$" + balanceM[1] : undefined
+  const autoReload = /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html)
+
   // Parse per-model usage from data-usage-segment buttons
   // Each <button> has style="width: X%", data-usage-segment, data-model
   // The width is the model's share of the bar; we scale it to the actual total
@@ -183,6 +190,8 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
       planTier,
+      balance,
+      autoReload,
       sessionModels,
       weeklyModels,
     },
@@ -405,7 +414,7 @@ const tui: TuiPlugin = async (api) => {
                   }}
                 >
                   <text fg={fg}>{e ? "▼" : "▶"} Ollama Cloud{d.planTier ? ` (${d.planTier})` : ""}</text>
-                  <text fg={fg}>{!e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : ""}</text>
+                  <text fg={fg}>{!e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? "AR " : "") + d.balance : ""}</text>
                 </box>
                 {e && (
                   <box flexDirection="column">

@@ -92,6 +92,9 @@ function parseUsageFromHtml(html) {
   const planRe = /class="[^"]*capitalize[^"]*"[^>]*>([^<]*)</;
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
+  const balanceM = html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/);
+  const balance = balanceM ? "$" + balanceM[1] : void 0;
+  const autoReload = /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html);
   function parseModels(html2, totalPct) {
     const buttonRe = /<button[\s\S]*?<\/button>/gi;
     const seen = /* @__PURE__ */ new Set();
@@ -125,6 +128,8 @@ function parseUsageFromHtml(html) {
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
       planTier,
+      balance,
+      autoReload,
       sessionModels,
       weeklyModels
     }
@@ -310,7 +315,7 @@ var tui = async (api) => {
                       " Ollama Cloud",
                       d.planTier ? ` (${d.planTier})` : ""
                     ] }),
-                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : "" })
+                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? "AR " : "") + d.balance : "" })
                   ]
                 }
               ),
