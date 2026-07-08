@@ -426,7 +426,7 @@ const tui: TuiPlugin = async (api) => {
                       <box flexDirection="column">
                         {d.sessionModels.map((m) => (
                           <box flexDirection="row" justifyContent="space-between">
-                            <text fg={mu}>{m.name}</text>
+                            <text fg={fg}>{m.name}</text>
                             <text fg={fg}>{fmtPct(m.percent)}</text>
                           </box>
                         ))}
@@ -453,7 +453,7 @@ const tui: TuiPlugin = async (api) => {
                       <box flexDirection="column">
                         {d.weeklyModels.map((m) => (
                           <box flexDirection="row" justifyContent="space-between">
-                            <text fg={mu}>{m.name}</text>
+                            <text fg={fg}>{m.name}</text>
                             <text fg={fg}>{fmtPct(m.percent)}</text>
                           </box>
                         ))}
