@@ -110,6 +110,7 @@ function parseUsageFromHtml(html) {
       if (!models) models = [];
       models.push({ name, percent: totalPct * (share / 100) });
     }
+    if (models) models.sort((a, b) => b.percent - a.percent);
     return models;
   }
   const meterSections = [...html.matchAll(/data-usage-meter[\s\S]*?<\/div>\s*<\/div>/gi)];

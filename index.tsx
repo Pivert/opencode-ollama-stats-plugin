@@ -165,6 +165,7 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
       if (!models) models = []
       models.push({ name, percent: totalPct * (share / 100) })
     }
+    if (models) models.sort((a, b) => b.percent - a.percent)
     return models
   }
 
