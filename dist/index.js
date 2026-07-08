@@ -302,6 +302,28 @@ var tui = async (api) => {
                 }
               ),
               e && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
+                d.models && d.models.length > 0 && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
+                  /* @__PURE__ */ jsx(
+                    "box",
+                    {
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      onMouseDown: () => {
+                        const next = !modelsExpanded();
+                        setModelsExpanded(next);
+                        api.kv?.set?.(KV_MODELS_EXP, next);
+                      },
+                      children: /* @__PURE__ */ jsxs("text", { fg, children: [
+                        modelsExpanded() ? "\u25BC" : "\u25B6",
+                        " Session & weekly share"
+                      ] })
+                    }
+                  ),
+                  modelsExpanded() && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.models.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
+                    /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
+                    /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                  ] })) })
+                ] }),
                 /* @__PURE__ */ jsx("box", { flexDirection: "row", justifyContent: "space-between", children: /* @__PURE__ */ jsxs("text", { fg, children: [
                   sessionCircle,
                   "Session ",
@@ -325,28 +347,6 @@ var tui = async (api) => {
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.weeklyReset)
-                ] }),
-                d.models && d.models.length > 0 && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
-                  /* @__PURE__ */ jsx(
-                    "box",
-                    {
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      onMouseDown: () => {
-                        const next = !modelsExpanded();
-                        setModelsExpanded(next);
-                        api.kv?.set?.(KV_MODELS_EXP, next);
-                      },
-                      children: /* @__PURE__ */ jsxs("text", { fg, children: [
-                        modelsExpanded() ? "\u25BC" : "\u25B6",
-                        " Models"
-                      ] })
-                    }
-                  ),
-                  modelsExpanded() && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.models.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
-                    /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
-                    /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
-                  ] })) })
                 ] })
               ] })
             ] });

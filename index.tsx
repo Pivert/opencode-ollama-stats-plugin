@@ -391,16 +391,6 @@ const tui: TuiPlugin = async (api) => {
                 </box>
                 {e && (
                   <box flexDirection="column">
-                    <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{sessionCircle}Session {barStr(d.sessionPercent / 100, 8)} {fmtPct(d.sessionPercent)} used</text>
-                    </box>
-                    {d.sessionReset && <text fg={mu}>Reset {fmtTime(d.sessionReset)}</text>}
-
-                    <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{weeklyCircle}Weekly  {barStr(d.weeklyPercent / 100, 8)} {fmtPct(d.weeklyPercent)} used</text>
-                    </box>
-                    {d.weeklyReset && <text fg={mu}>Reset {fmtTime(d.weeklyReset)}</text>}
-
                     {d.models && d.models.length > 0 && (
                       <box flexDirection="column">
                         <box
@@ -412,7 +402,7 @@ const tui: TuiPlugin = async (api) => {
                             api.kv?.set?.(KV_MODELS_EXP, next)
                           }}
                         >
-                          <text fg={fg}>{modelsExpanded() ? "▼" : "▶"} Models</text>
+                          <text fg={fg}>{modelsExpanded() ? "▼" : "▶"} Session & weekly share</text>
                         </box>
                         {modelsExpanded() && (
                           <box flexDirection="column">
@@ -426,6 +416,16 @@ const tui: TuiPlugin = async (api) => {
                         )}
                       </box>
                     )}
+
+                    <box flexDirection="row" justifyContent="space-between">
+                      <text fg={fg}>{sessionCircle}Session {barStr(d.sessionPercent / 100, 8)} {fmtPct(d.sessionPercent)} used</text>
+                    </box>
+                    {d.sessionReset && <text fg={mu}>Reset {fmtTime(d.sessionReset)}</text>}
+
+                    <box flexDirection="row" justifyContent="space-between">
+                      <text fg={fg}>{weeklyCircle}Weekly  {barStr(d.weeklyPercent / 100, 8)} {fmtPct(d.weeklyPercent)} used</text>
+                    </box>
+                    {d.weeklyReset && <text fg={mu}>Reset {fmtTime(d.weeklyReset)}</text>}
                   </box>
                 )}
               </box>
