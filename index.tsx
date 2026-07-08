@@ -414,7 +414,10 @@ const tui: TuiPlugin = async (api) => {
                       }}
                     >
                       <text fg={fg}>{sessionExpanded() ? "▼" : "▶"} {sessionCircle}Session</text>
-                      <text fg={fg}><text fg={mu}>{barStr(d.sessionPercent / 100, 8)} </text>{fmtPct(d.sessionPercent)}</text>
+                      <box flexDirection="row">
+                        <text fg={mu}>{barStr(d.sessionPercent / 100, 8)} </text>
+                        <text fg={fg}>{fmtPct(d.sessionPercent)}</text>
+                      </box>
                     </box>
                     {sessionExpanded() && d.sessionModels && d.sessionModels.length > 0 && (
                       <box flexDirection="column">
@@ -438,7 +441,10 @@ const tui: TuiPlugin = async (api) => {
                       }}
                     >
                       <text fg={fg}>{weeklyExpanded() ? "▼" : "▶"} {weeklyCircle}Weekly</text>
-                      <text fg={fg}><text fg={mu}>{barStr(d.weeklyPercent / 100, 8)} </text>{fmtPct(d.weeklyPercent)}</text>
+                      <box flexDirection="row">
+                        <text fg={mu}>{barStr(d.weeklyPercent / 100, 8)} </text>
+                        <text fg={fg}>{fmtPct(d.weeklyPercent)}</text>
+                      </box>
                     </box>
                     {weeklyExpanded() && d.weeklyModels && d.weeklyModels.length > 0 && (
                       <box flexDirection="column">

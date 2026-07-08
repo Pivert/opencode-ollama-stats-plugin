@@ -329,12 +329,12 @@ var tui = async (api) => {
                         sessionCircle,
                         "Session"
                       ] }),
-                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                      /* @__PURE__ */ jsxs("box", { flexDirection: "row", children: [
                         /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                           barStr(d.sessionPercent / 100, 8),
                           " "
                         ] }),
-                        fmtPct(d.sessionPercent)
+                        /* @__PURE__ */ jsx("text", { fg, children: fmtPct(d.sessionPercent) })
                       ] })
                     ]
                   }
@@ -364,12 +364,12 @@ var tui = async (api) => {
                         weeklyCircle,
                         "Weekly"
                       ] }),
-                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                      /* @__PURE__ */ jsxs("box", { flexDirection: "row", children: [
                         /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                           barStr(d.weeklyPercent / 100, 8),
                           " "
                         ] }),
-                        fmtPct(d.weeklyPercent)
+                        /* @__PURE__ */ jsx("text", { fg, children: fmtPct(d.weeklyPercent) })
                       ] })
                     ]
                   }
