@@ -8,8 +8,8 @@
 ## Instalación rápida (desde código fuente)
 
 ```bash
-git clone https://github.com/anibalardid/opencode-ollama-stats-plugin.git
-cd ollama-cloud-usage
+git clone https://github.com/Pivert/opencode-ollama-stats-plugin.git
+cd opencode-ollama-stats-plugin
 npm install
 npm run build
 opencode plugin -g "$(pwd)"
@@ -59,7 +59,7 @@ El valor de la cookie es un string largo y opaco — debería verse como un JWT 
 ## Cómo actualizar
 
 ```bash
-cd ollama-cloud-usage
+cd opencode-ollama-stats-plugin
 git pull
 npm install
 npm run build
@@ -71,7 +71,7 @@ npm run build
 ```bash
 opencode plugin -g "$(pwd)"
 # Después borrá la carpeta
-rm -rf ollama-cloud-usage
+rm -rf opencode-ollama-stats-plugin
 ```
 
 ## Requisitos

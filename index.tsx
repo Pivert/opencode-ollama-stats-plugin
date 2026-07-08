@@ -321,21 +321,13 @@ const tui: TuiPlugin = async (api) => {
                 {e && (
                   <box flexDirection="column">
                     <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{sessionCircle}Session</text>
-                      <text fg={fg}>{fmtPct(d.sessionPercent)} used</text>
+                      <text fg={fg}>{sessionCircle}Session {barStr(d.sessionPercent / 100, 8)} {fmtPct(d.sessionPercent)} used</text>
                     </box>
-                    <text fg={fg}>
-                      {barStr(sessionRemaining / 100, 8)} {fmtPct(sessionRemaining)} free
-                    </text>
                     {d.sessionReset && <text fg={mu}>Reset {fmtTime(d.sessionReset)}</text>}
 
                     <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{weeklyCircle}Weekly</text>
-                      <text fg={fg}>{fmtPct(d.weeklyPercent)} used</text>
+                      <text fg={fg}>{weeklyCircle}Weekly  {barStr(d.weeklyPercent / 100, 8)} {fmtPct(d.weeklyPercent)} used</text>
                     </box>
-                    <text fg={fg}>
-                      {barStr(weeklyRemaining / 100, 8)} {fmtPct(weeklyRemaining)} free
-                    </text>
                     {d.weeklyReset && <text fg={mu}>Reset {fmtTime(d.weeklyReset)}</text>}
                   </box>
                 )}

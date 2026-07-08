@@ -252,42 +252,26 @@ var tui = async (api) => {
                 }
               ),
               e && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
-                /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
-                  /* @__PURE__ */ jsxs("text", { fg, children: [
-                    sessionCircle,
-                    "Session"
-                  ] }),
-                  /* @__PURE__ */ jsxs("text", { fg, children: [
-                    fmtPct(d.sessionPercent),
-                    " used"
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("text", { fg, children: [
-                  barStr(sessionRemaining / 100, 8),
+                /* @__PURE__ */ jsx("box", { flexDirection: "row", justifyContent: "space-between", children: /* @__PURE__ */ jsxs("text", { fg, children: [
+                  sessionCircle,
+                  "Session ",
+                  barStr(d.sessionPercent / 100, 8),
                   " ",
-                  fmtPct(sessionRemaining),
-                  " free"
-                ] }),
+                  fmtPct(d.sessionPercent),
+                  " used"
+                ] }) }),
                 d.sessionReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.sessionReset)
                 ] }),
-                /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
-                  /* @__PURE__ */ jsxs("text", { fg, children: [
-                    weeklyCircle,
-                    "Weekly"
-                  ] }),
-                  /* @__PURE__ */ jsxs("text", { fg, children: [
-                    fmtPct(d.weeklyPercent),
-                    " used"
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("text", { fg, children: [
-                  barStr(weeklyRemaining / 100, 8),
+                /* @__PURE__ */ jsx("box", { flexDirection: "row", justifyContent: "space-between", children: /* @__PURE__ */ jsxs("text", { fg, children: [
+                  weeklyCircle,
+                  "Weekly  ",
+                  barStr(d.weeklyPercent / 100, 8),
                   " ",
-                  fmtPct(weeklyRemaining),
-                  " free"
-                ] }),
+                  fmtPct(d.weeklyPercent),
+                  " used"
+                ] }) }),
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.weeklyReset)
