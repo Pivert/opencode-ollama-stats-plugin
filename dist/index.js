@@ -374,7 +374,7 @@ var tui = async (api) => {
                         weeklyExpanded() ? "\u25BC" : "\u25B6",
                         " ",
                         weeklyCircle,
-                        "Weekly"
+                        "Weekly "
                       ] }),
                       /* @__PURE__ */ jsxs("box", { flexDirection: "row", children: [
                         /* @__PURE__ */ jsxs("text", { fg: mu, children: [

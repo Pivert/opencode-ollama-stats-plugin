@@ -454,7 +454,7 @@ const tui: TuiPlugin = async (api) => {
                         api.kv?.set?.(KV_WEEKLY_EXP, next)
                       }}
                     >
-                      <text fg={fg}>{weeklyExpanded() ? "▼" : "▶"} {weeklyCircle}Weekly</text>
+                      <text fg={fg}>{weeklyExpanded() ? "▼" : "▶"} {weeklyCircle}Weekly </text>
                       <box flexDirection="row">
                         <text fg={mu}>{barStr(d.weeklyPercent / 100, 8)} </text>
                         <text fg={fg}>{fmtPct(d.weeklyPercent)}</text>
