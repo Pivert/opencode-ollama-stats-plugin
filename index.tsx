@@ -145,7 +145,9 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
 
   // Parse per-model usage from data-usage-segment buttons
   // Each <button> has style="width: X%", data-usage-segment, data-model
-  function parseModels(html: string): { name: string; percent: number }[] | undefined {
+  // The width is the model's share of the bar; we scale it to the actual total
+  // so the models' contributions sum to the session/weekly total.
+  function parseModels(html: string, totalPct: number): { name: string; percent: number }[] | undefined {
     const buttonRe = /<button[\s\S]*?<\/button>/gi
     const seen = new Set<string>()
     let models: { name: string; percent: number }[] | undefined
@@ -156,20 +158,20 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
       const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/)
       if (!modelM || !widthM) continue
       const name = modelM[1].trim()
-      const percent = parseFloat(widthM[1])
-      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
+      const share = parseFloat(widthM[1])
+      if (!name || isNaN(share) || share < 0 || share > 100) continue
       if (seen.has(name)) continue
       seen.add(name)
       if (!models) models = []
-      models.push({ name, percent })
+      models.push({ name, percent: totalPct * (share / 100) })
     }
     return models
   }
 
   // Split by data-usage-meter to get session vs weekly blocks
   const meterSections = [...html.matchAll(/data-usage-meter[\s\S]*?<\/div>\s*<\/div>/gi)]
-  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0]) : undefined
-  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0]) : undefined
+  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0], sessionPct) : undefined
+  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0], weeklyPct) : undefined
 
   return {
     data: {
@@ -400,7 +402,7 @@ const tui: TuiPlugin = async (api) => {
                   }}
                 >
                   <text fg={fg}>{e ? "▼" : "▶"} Ollama Cloud{d.planTier ? ` (${d.planTier})` : ""}</text>
-                  <text fg={fg}>{!e ? sessionCircle + fmtPct(d.sessionPercent) : ""}</text>
+                  <text fg={fg}>{!e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : ""}</text>
                 </box>
                 {e && (
                   <box flexDirection="column">

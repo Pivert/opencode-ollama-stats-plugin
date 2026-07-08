@@ -92,7 +92,7 @@ function parseUsageFromHtml(html) {
   const planRe = /class="[^"]*capitalize[^"]*"[^>]*>([^<]*)</;
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
-  function parseModels(html2) {
+  function parseModels(html2, totalPct) {
     const buttonRe = /<button[\s\S]*?<\/button>/gi;
     const seen = /* @__PURE__ */ new Set();
     let models;
@@ -103,18 +103,18 @@ function parseUsageFromHtml(html) {
       const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/);
       if (!modelM || !widthM) continue;
       const name = modelM[1].trim();
-      const percent = parseFloat(widthM[1]);
-      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
+      const share = parseFloat(widthM[1]);
+      if (!name || isNaN(share) || share < 0 || share > 100) continue;
       if (seen.has(name)) continue;
       seen.add(name);
       if (!models) models = [];
-      models.push({ name, percent });
+      models.push({ name, percent: totalPct * (share / 100) });
     }
     return models;
   }
   const meterSections = [...html.matchAll(/data-usage-meter[\s\S]*?<\/div>\s*<\/div>/gi)];
-  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0]) : void 0;
-  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0]) : void 0;
+  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0], sessionPct) : void 0;
+  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0], weeklyPct) : void 0;
   return {
     data: {
       sessionPercent: sessionPct,
@@ -307,7 +307,7 @@ var tui = async (api) => {
                       " Ollama Cloud",
                       d.planTier ? ` (${d.planTier})` : ""
                     ] }),
-                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + fmtPct(d.sessionPercent) : "" })
+                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : "" })
                   ]
                 }
               ),
