@@ -234,7 +234,7 @@ function barStr(ratio: number, w: number): string {
 }
 
 function fmtPct(used: number): string {
-  return `${used.toFixed(1)}%`
+  return `${used.toFixed(1)}%`.padStart(6)
 }
 
 function fmtTime(iso?: string): string {

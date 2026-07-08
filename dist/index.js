@@ -165,7 +165,7 @@ function barStr(ratio, w) {
   return "\u2588".repeat(Math.max(0, filled)) + "\u2591".repeat(Math.max(0, w - filled));
 }
 function fmtPct(used) {
-  return `${used.toFixed(1)}%`;
+  return `${used.toFixed(1)}%`.padStart(6);
 }
 function fmtTime(iso) {
   if (!iso) return "";
