@@ -98,8 +98,8 @@ interface UsageData {
   sessionReset?: string
   weeklyReset?: string
   planTier?: string
-  sessionModels?: { name: string; percent: number }[]
-  weeklyModels?: { name: string; percent: number }[]
+  sessionModels?: { name: string; requests: number; percent: number }[]
+  weeklyModels?: { name: string; requests: number; percent: number }[]
 }
 
 const RETRY_DELAYS = [5_000, 15_000, 30_000] as const
@@ -147,23 +147,25 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   // Each <button> has style="width: X%", data-usage-segment, data-model
   // The width is the model's share of the bar; we scale it to the actual total
   // so the models' contributions sum to the session/weekly total.
-  function parseModels(html: string, totalPct: number): { name: string; percent: number }[] | undefined {
+  function parseModels(html: string, totalPct: number): { name: string; requests: number; percent: number }[] | undefined {
     const buttonRe = /<button[\s\S]*?<\/button>/gi
     const seen = new Set<string>()
-    let models: { name: string; percent: number }[] | undefined
+    let models: { name: string; requests: number; percent: number }[] | undefined
     for (const btn of html.matchAll(buttonRe)) {
       const btnHtml = btn[0]
       if (!btnHtml.includes("data-usage-segment")) continue
       const modelM = btnHtml.match(/data-model="([^"]*)"/)
       const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/)
+      const reqM = btnHtml.match(/data-requests="(\d+)"/)
       if (!modelM || !widthM) continue
       const name = modelM[1].trim()
       const share = parseFloat(widthM[1])
+      const requests = reqM ? parseInt(reqM[1], 10) : 0
       if (!name || isNaN(share) || share < 0 || share > 100) continue
       if (seen.has(name)) continue
       seen.add(name)
       if (!models) models = []
-      models.push({ name, percent: totalPct * (share / 100) })
+      models.push({ name, requests, percent: totalPct * (share / 100) })
     }
     if (models) models.sort((a, b) => b.percent - a.percent)
     return models
@@ -427,7 +429,7 @@ const tui: TuiPlugin = async (api) => {
                         {d.sessionModels.map((m) => (
                           <box flexDirection="row" justifyContent="space-between">
                             <text fg={fg}>{m.name}</text>
-                            <text fg={fg}>{fmtPct(m.percent)}</text>
+                            <text fg={fg}>{m.requests}R {fmtPct(m.percent)}</text>
                           </box>
                         ))}
                       </box>
@@ -454,7 +456,7 @@ const tui: TuiPlugin = async (api) => {
                         {d.weeklyModels.map((m) => (
                           <box flexDirection="row" justifyContent="space-between">
                             <text fg={fg}>{m.name}</text>
-                            <text fg={fg}>{fmtPct(m.percent)}</text>
+                            <text fg={fg}>{m.requests}R {fmtPct(m.percent)}</text>
                           </box>
                         ))}
                       </box>

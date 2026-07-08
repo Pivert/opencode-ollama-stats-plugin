@@ -101,14 +101,16 @@ function parseUsageFromHtml(html) {
       if (!btnHtml.includes("data-usage-segment")) continue;
       const modelM = btnHtml.match(/data-model="([^"]*)"/);
       const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/);
+      const reqM = btnHtml.match(/data-requests="(\d+)"/);
       if (!modelM || !widthM) continue;
       const name = modelM[1].trim();
       const share = parseFloat(widthM[1]);
+      const requests = reqM ? parseInt(reqM[1], 10) : 0;
       if (!name || isNaN(share) || share < 0 || share > 100) continue;
       if (seen.has(name)) continue;
       seen.add(name);
       if (!models) models = [];
-      models.push({ name, percent: totalPct * (share / 100) });
+      models.push({ name, requests, percent: totalPct * (share / 100) });
     }
     if (models) models.sort((a, b) => b.percent - a.percent);
     return models;
@@ -342,7 +344,11 @@ var tui = async (api) => {
                 ),
                 sessionExpanded() && d.sessionModels && d.sessionModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.sessionModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
                   /* @__PURE__ */ jsx("text", { fg, children: m.name }),
-                  /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                  /* @__PURE__ */ jsxs("text", { fg, children: [
+                    m.requests,
+                    "R ",
+                    fmtPct(m.percent)
+                  ] })
                 ] })) }),
                 d.sessionReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
@@ -377,7 +383,11 @@ var tui = async (api) => {
                 ),
                 weeklyExpanded() && d.weeklyModels && d.weeklyModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.weeklyModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
                   /* @__PURE__ */ jsx("text", { fg, children: m.name }),
-                  /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                  /* @__PURE__ */ jsxs("text", { fg, children: [
+                    m.requests,
+                    "R ",
+                    fmtPct(m.percent)
+                  ] })
                 ] })) }),
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
