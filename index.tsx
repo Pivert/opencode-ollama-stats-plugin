@@ -414,7 +414,7 @@ const tui: TuiPlugin = async (api) => {
                   }}
                 >
                   <text fg={fg}>{e ? "▼" : "▶"} Ollama Cloud{d.planTier ? ` (${d.planTier})` : ""}</text>
-                  <text fg={fg}>{!e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? "AR " : "") + d.balance : ""}</text>
+                  <text fg={fg}>{!e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? "AR " : "B ") + d.balance : ""}</text>
                 </box>
                 {e && (
                   <box flexDirection="column">
