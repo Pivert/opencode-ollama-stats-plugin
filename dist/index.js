@@ -350,9 +350,9 @@ var tui = async (api) => {
                 sessionExpanded() && d.sessionModels && d.sessionModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.sessionModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
                   /* @__PURE__ */ jsx("text", { fg, children: m.name }),
                   /* @__PURE__ */ jsxs("text", { fg, children: [
-                    m.requests,
+                    String(m.requests).padStart(3),
                     "R ",
-                    fmtPct(m.percent)
+                    fmtPct(m.percent).padStart(5)
                   ] })
                 ] })) }),
                 d.sessionReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
@@ -389,9 +389,9 @@ var tui = async (api) => {
                 weeklyExpanded() && d.weeklyModels && d.weeklyModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.weeklyModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
                   /* @__PURE__ */ jsx("text", { fg, children: m.name }),
                   /* @__PURE__ */ jsxs("text", { fg, children: [
-                    m.requests,
+                    String(m.requests).padStart(3),
                     "R ",
-                    fmtPct(m.percent)
+                    fmtPct(m.percent).padStart(5)
                   ] })
                 ] })) }),
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
