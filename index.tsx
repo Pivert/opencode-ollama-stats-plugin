@@ -57,6 +57,40 @@ async function resolveCookie(): Promise<{ result?: CookieResult; error?: string 
   return { error: "no cookie found" }
 }
 
+// ── Shared cache ─────────────────────────────────────────────────────────────
+const CACHE_DIR = process.env.HOME + "/.config/opencode/opencode-quota"
+const CACHE_FILE = CACHE_DIR + "/ollama-cloud-cache.json"
+const CACHE_TTL_MS = 60_000
+
+interface CacheEntry {
+  cached_at: string
+  data: UsageData
+}
+
+async function readCache(): Promise<UsageData | null> {
+  try {
+    const fs = await import("fs/promises")
+    const content = await fs.readFile(CACHE_FILE, "utf-8")
+    const entry: CacheEntry = JSON.parse(content)
+    const age = Date.now() - new Date(entry.cached_at).getTime()
+    if (age < CACHE_TTL_MS) return entry.data
+    return null
+  } catch {
+    return null
+  }
+}
+
+async function writeCache(data: UsageData): Promise<void> {
+  try {
+    const fs = await import("fs/promises")
+    await fs.mkdir(CACHE_DIR, { recursive: true })
+    const entry: CacheEntry = { cached_at: new Date().toISOString(), data }
+    await fs.writeFile(CACHE_FILE, JSON.stringify(entry), "utf-8")
+  } catch {
+    // cache write failure is non-fatal
+  }
+}
+
 // ── Scraper ──────────────────────────────────────────────────────────────────
 interface UsageData {
   sessionPercent: number
@@ -108,18 +142,26 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   const planMatch = html.match(planRe)
   const planTier = planMatch ? planMatch[1].trim() : undefined
 
+  // Parse per-model usage from data-usage-segment buttons
+  // Each <button> has its own style="width: X%", data-usage-segment, data-model
   let models: { name: string; percent: number }[] | undefined
-  try {
-    const modelRe = /<(?:td|span|div|p)[^>]*>\s*([^<]{1,40})\s*<\/(?:td|span|div|p)>\s*(?:<(?:td|span|div|p)[^>]*>\s*)?(\d+(?:\.\d+)?)%\s*<\/(?:td|span|div|p)>/gi
-    for (const match of html.matchAll(modelRe)) {
-      const name = match[1].trim()
-      const percent = parseFloat(match[2])
-      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
-      if (!models) models = []
-      models.push({ name, percent })
-    }
-    if (models && models.length === 0) models = undefined
-  } catch (_err) {}
+  const buttonRe = /<button[\s\S]*?<\/button>/gi
+  const seen = new Set<string>()
+  for (const btn of html.matchAll(buttonRe)) {
+    const btnHtml = btn[0]
+    if (!btnHtml.includes("data-usage-segment")) continue
+    const modelM = btnHtml.match(/data-model="([^"]*)"/)
+    const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/)
+    if (!modelM || !widthM) continue
+    const name = modelM[1].trim()
+    const percent = parseFloat(widthM[1])
+    if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
+    if (seen.has(name)) continue
+    seen.add(name)
+    if (!models) models = []
+    models.push({ name, percent })
+  }
+  if (models && models.length === 0) models = undefined
 
   return {
     data: {
@@ -241,6 +283,14 @@ const tui: TuiPlugin = async (api) => {
           return
         }
 
+        // Use shared cache to avoid hitting ollama.com more than once per minute
+        // across all OpenCode sessions
+        const cached = await readCache()
+        if (cached) {
+          setState({ kind: "data", d: cached })
+          return
+        }
+
         const scraped = await scrapeUsage(resolved.result.cookie)
         if (scraped.error) {
           setState({ kind: "error", msg: scraped.error })
@@ -248,6 +298,8 @@ const tui: TuiPlugin = async (api) => {
           return
         }
 
+        // Write to shared cache so other sessions can reuse
+        await writeCache(scraped.data!)
         setState({ kind: "data", d: scraped.data! })
       }
 

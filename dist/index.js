@@ -38,6 +38,30 @@ async function resolveCookie() {
   }
   return { error: "no cookie found" };
 }
+var CACHE_DIR = process.env.HOME + "/.config/opencode/opencode-quota";
+var CACHE_FILE = CACHE_DIR + "/ollama-cloud-cache.json";
+var CACHE_TTL_MS = 6e4;
+async function readCache() {
+  try {
+    const fs = await import("fs/promises");
+    const content = await fs.readFile(CACHE_FILE, "utf-8");
+    const entry = JSON.parse(content);
+    const age = Date.now() - new Date(entry.cached_at).getTime();
+    if (age < CACHE_TTL_MS) return entry.data;
+    return null;
+  } catch {
+    return null;
+  }
+}
+async function writeCache(data) {
+  try {
+    const fs = await import("fs/promises");
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+    const entry = { cached_at: (/* @__PURE__ */ new Date()).toISOString(), data };
+    await fs.writeFile(CACHE_FILE, JSON.stringify(entry), "utf-8");
+  } catch {
+  }
+}
 var RETRY_DELAYS = [5e3, 15e3, 3e4];
 function parseUsageFromHtml(html) {
   const usageRe = /(\d+(?:\.\d+)?)%\s*used/gi;
@@ -69,18 +93,23 @@ function parseUsageFromHtml(html) {
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
   let models;
-  try {
-    const modelRe = /<(?:td|span|div|p)[^>]*>\s*([^<]{1,40})\s*<\/(?:td|span|div|p)>\s*(?:<(?:td|span|div|p)[^>]*>\s*)?(\d+(?:\.\d+)?)%\s*<\/(?:td|span|div|p)>/gi;
-    for (const match of html.matchAll(modelRe)) {
-      const name = match[1].trim();
-      const percent = parseFloat(match[2]);
-      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
-      if (!models) models = [];
-      models.push({ name, percent });
-    }
-    if (models && models.length === 0) models = void 0;
-  } catch (_err) {
+  const buttonRe = /<button[\s\S]*?<\/button>/gi;
+  const seen = /* @__PURE__ */ new Set();
+  for (const btn of html.matchAll(buttonRe)) {
+    const btnHtml = btn[0];
+    if (!btnHtml.includes("data-usage-segment")) continue;
+    const modelM = btnHtml.match(/data-model="([^"]*)"/);
+    const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/);
+    if (!modelM || !widthM) continue;
+    const name = modelM[1].trim();
+    const percent = parseFloat(widthM[1]);
+    if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    if (!models) models = [];
+    models.push({ name, percent });
   }
+  if (models && models.length === 0) models = void 0;
   return {
     data: {
       sessionPercent: sessionPct,
@@ -181,12 +210,18 @@ var tui = async (api) => {
           setState({ kind: "help" });
           return;
         }
+        const cached = await readCache();
+        if (cached) {
+          setState({ kind: "data", d: cached });
+          return;
+        }
         const scraped = await scrapeUsage(resolved.result.cookie);
         if (scraped.error) {
           setState({ kind: "error", msg: scraped.error });
           scheduleRetry(0);
           return;
         }
+        await writeCache(scraped.data);
         setState({ kind: "data", d: scraped.data });
       }
       function scheduleRetry(attempt) {
