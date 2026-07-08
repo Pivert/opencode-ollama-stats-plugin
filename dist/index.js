@@ -92,24 +92,29 @@ function parseUsageFromHtml(html) {
   const planRe = /class="[^"]*capitalize[^"]*"[^>]*>([^<]*)</;
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
-  let models;
-  const buttonRe = /<button[\s\S]*?<\/button>/gi;
-  const seen = /* @__PURE__ */ new Set();
-  for (const btn of html.matchAll(buttonRe)) {
-    const btnHtml = btn[0];
-    if (!btnHtml.includes("data-usage-segment")) continue;
-    const modelM = btnHtml.match(/data-model="([^"]*)"/);
-    const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/);
-    if (!modelM || !widthM) continue;
-    const name = modelM[1].trim();
-    const percent = parseFloat(widthM[1]);
-    if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
-    if (seen.has(name)) continue;
-    seen.add(name);
-    if (!models) models = [];
-    models.push({ name, percent });
+  function parseModels(html2) {
+    const buttonRe = /<button[\s\S]*?<\/button>/gi;
+    const seen = /* @__PURE__ */ new Set();
+    let models;
+    for (const btn of html2.matchAll(buttonRe)) {
+      const btnHtml = btn[0];
+      if (!btnHtml.includes("data-usage-segment")) continue;
+      const modelM = btnHtml.match(/data-model="([^"]*)"/);
+      const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/);
+      if (!modelM || !widthM) continue;
+      const name = modelM[1].trim();
+      const percent = parseFloat(widthM[1]);
+      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      if (!models) models = [];
+      models.push({ name, percent });
+    }
+    return models;
   }
-  if (models && models.length === 0) models = void 0;
+  const meterSections = [...html.matchAll(/data-usage-meter[\s\S]*?<\/div>\s*<\/div>/gi)];
+  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0]) : void 0;
+  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0]) : void 0;
   return {
     data: {
       sessionPercent: sessionPct,
@@ -117,7 +122,8 @@ function parseUsageFromHtml(html) {
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
       planTier,
-      models
+      sessionModels,
+      weeklyModels
     }
   };
 }
@@ -169,7 +175,8 @@ function fmtTime(iso) {
   }
 }
 var KV_EXP = "ollama-cloud:exp";
-var KV_MODELS_EXP = "ollama-cloud:models:exp";
+var KV_SESSION_EXP = "ollama-cloud:session:exp";
+var KV_WEEKLY_EXP = "ollama-cloud:weekly:exp";
 var init = false;
 var tui = async (api) => {
   if (init) return;
@@ -201,8 +208,11 @@ var tui = async (api) => {
       const [expanded, setExpanded] = createSignal(
         api.kv?.get?.(KV_EXP, true) !== false
       );
-      const [modelsExpanded, setModelsExpanded] = createSignal(
-        api.kv?.get?.(KV_MODELS_EXP, false) !== false
+      const [sessionExpanded, setSessionExpanded] = createSignal(
+        api.kv?.get?.(KV_SESSION_EXP, false) !== false
+      );
+      const [weeklyExpanded, setWeeklyExpanded] = createSignal(
+        api.kv?.get?.(KV_WEEKLY_EXP, false) !== false
       );
       async function refresh() {
         const resolved = await resolveCookie();
@@ -302,48 +312,72 @@ var tui = async (api) => {
                 }
               ),
               e && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
-                d.models && d.models.length > 0 && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
-                  /* @__PURE__ */ jsx(
-                    "box",
-                    {
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      onMouseDown: () => {
-                        const next = !modelsExpanded();
-                        setModelsExpanded(next);
-                        api.kv?.set?.(KV_MODELS_EXP, next);
-                      },
-                      children: /* @__PURE__ */ jsxs("text", { fg, children: [
-                        modelsExpanded() ? "\u25BC" : "\u25B6",
-                        " Session & weekly share"
+                /* @__PURE__ */ jsxs(
+                  "box",
+                  {
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    onMouseDown: () => {
+                      const next = !sessionExpanded();
+                      setSessionExpanded(next);
+                      api.kv?.set?.(KV_SESSION_EXP, next);
+                    },
+                    children: [
+                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                        sessionExpanded() ? "\u25BC" : "\u25B6",
+                        " ",
+                        sessionCircle,
+                        "Session"
+                      ] }),
+                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                        /* @__PURE__ */ jsxs("text", { fg: mu, children: [
+                          barStr(d.sessionPercent / 100, 8),
+                          " "
+                        ] }),
+                        fmtPct(d.sessionPercent)
                       ] })
-                    }
-                  ),
-                  modelsExpanded() && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.models.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
-                    /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
-                    /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
-                  ] })) })
-                ] }),
-                /* @__PURE__ */ jsx("box", { flexDirection: "row", justifyContent: "space-between", children: /* @__PURE__ */ jsxs("text", { fg, children: [
-                  sessionCircle,
-                  "Session ",
-                  barStr(d.sessionPercent / 100, 8),
-                  " ",
-                  fmtPct(d.sessionPercent),
-                  " used"
-                ] }) }),
+                    ]
+                  }
+                ),
+                sessionExpanded() && d.sessionModels && d.sessionModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.sessionModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
+                  /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
+                  /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                ] })) }),
                 d.sessionReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.sessionReset)
                 ] }),
-                /* @__PURE__ */ jsx("box", { flexDirection: "row", justifyContent: "space-between", children: /* @__PURE__ */ jsxs("text", { fg, children: [
-                  weeklyCircle,
-                  "Weekly  ",
-                  barStr(d.weeklyPercent / 100, 8),
-                  " ",
-                  fmtPct(d.weeklyPercent),
-                  " used"
-                ] }) }),
+                /* @__PURE__ */ jsxs(
+                  "box",
+                  {
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    onMouseDown: () => {
+                      const next = !weeklyExpanded();
+                      setWeeklyExpanded(next);
+                      api.kv?.set?.(KV_WEEKLY_EXP, next);
+                    },
+                    children: [
+                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                        weeklyExpanded() ? "\u25BC" : "\u25B6",
+                        " ",
+                        weeklyCircle,
+                        "Weekly"
+                      ] }),
+                      /* @__PURE__ */ jsxs("text", { fg, children: [
+                        /* @__PURE__ */ jsxs("text", { fg: mu, children: [
+                          barStr(d.weeklyPercent / 100, 8),
+                          " "
+                        ] }),
+                        fmtPct(d.weeklyPercent)
+                      ] })
+                    ]
+                  }
+                ),
+                weeklyExpanded() && d.weeklyModels && d.weeklyModels.length > 0 && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.weeklyModels.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
+                  /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
+                  /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                ] })) }),
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.weeklyReset)

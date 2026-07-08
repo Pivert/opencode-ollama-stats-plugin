@@ -98,7 +98,8 @@ interface UsageData {
   sessionReset?: string
   weeklyReset?: string
   planTier?: string
-  models?: { name: string; percent: number }[]
+  sessionModels?: { name: string; percent: number }[]
+  weeklyModels?: { name: string; percent: number }[]
 }
 
 const RETRY_DELAYS = [5_000, 15_000, 30_000] as const
@@ -143,25 +144,32 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   const planTier = planMatch ? planMatch[1].trim() : undefined
 
   // Parse per-model usage from data-usage-segment buttons
-  // Each <button> has its own style="width: X%", data-usage-segment, data-model
-  let models: { name: string; percent: number }[] | undefined
-  const buttonRe = /<button[\s\S]*?<\/button>/gi
-  const seen = new Set<string>()
-  for (const btn of html.matchAll(buttonRe)) {
-    const btnHtml = btn[0]
-    if (!btnHtml.includes("data-usage-segment")) continue
-    const modelM = btnHtml.match(/data-model="([^"]*)"/)
-    const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/)
-    if (!modelM || !widthM) continue
-    const name = modelM[1].trim()
-    const percent = parseFloat(widthM[1])
-    if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
-    if (seen.has(name)) continue
-    seen.add(name)
-    if (!models) models = []
-    models.push({ name, percent })
+  // Each <button> has style="width: X%", data-usage-segment, data-model
+  function parseModels(html: string): { name: string; percent: number }[] | undefined {
+    const buttonRe = /<button[\s\S]*?<\/button>/gi
+    const seen = new Set<string>()
+    let models: { name: string; percent: number }[] | undefined
+    for (const btn of html.matchAll(buttonRe)) {
+      const btnHtml = btn[0]
+      if (!btnHtml.includes("data-usage-segment")) continue
+      const modelM = btnHtml.match(/data-model="([^"]*)"/)
+      const widthM = btnHtml.match(/style="[^"]*width:\s*([\d.]+)%/)
+      if (!modelM || !widthM) continue
+      const name = modelM[1].trim()
+      const percent = parseFloat(widthM[1])
+      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
+      if (seen.has(name)) continue
+      seen.add(name)
+      if (!models) models = []
+      models.push({ name, percent })
+    }
+    return models
   }
-  if (models && models.length === 0) models = undefined
+
+  // Split by data-usage-meter to get session vs weekly blocks
+  const meterSections = [...html.matchAll(/data-usage-meter[\s\S]*?<\/div>\s*<\/div>/gi)]
+  const sessionModels = meterSections[0] ? parseModels(meterSections[0][0]) : undefined
+  const weeklyModels = meterSections[1] ? parseModels(meterSections[1][0]) : undefined
 
   return {
     data: {
@@ -170,7 +178,8 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
       planTier,
-      models,
+      sessionModels,
+      weeklyModels,
     },
   }
 }
@@ -232,7 +241,8 @@ function fmtTime(iso?: string): string {
 
 // ── Plugin ───────────────────────────────────────────────────────────────────
 const KV_EXP = "ollama-cloud:exp"
-const KV_MODELS_EXP = "ollama-cloud:models:exp"
+const KV_SESSION_EXP = "ollama-cloud:session:exp"
+const KV_WEEKLY_EXP = "ollama-cloud:weekly:exp"
 
 let init = false
 
@@ -272,8 +282,11 @@ const tui: TuiPlugin = async (api) => {
       const [expanded, setExpanded] = createSignal(
         api.kv?.get?.<boolean>(KV_EXP, true) !== false,
       )
-      const [modelsExpanded, setModelsExpanded] = createSignal(
-        api.kv?.get?.<boolean>(KV_MODELS_EXP, false) !== false,
+      const [sessionExpanded, setSessionExpanded] = createSignal(
+        api.kv?.get?.<boolean>(KV_SESSION_EXP, false) !== false,
+      )
+      const [weeklyExpanded, setWeeklyExpanded] = createSignal(
+        api.kv?.get?.<boolean>(KV_WEEKLY_EXP, false) !== false,
       )
 
       async function refresh() {
@@ -391,40 +404,52 @@ const tui: TuiPlugin = async (api) => {
                 </box>
                 {e && (
                   <box flexDirection="column">
-                    {d.models && d.models.length > 0 && (
+                    <box
+                      flexDirection="row"
+                      justifyContent="space-between"
+                      onMouseDown={() => {
+                        const next = !sessionExpanded()
+                        setSessionExpanded(next)
+                        api.kv?.set?.(KV_SESSION_EXP, next)
+                      }}
+                    >
+                      <text fg={fg}>{sessionExpanded() ? "▼" : "▶"} {sessionCircle}Session</text>
+                      <text fg={fg}><text fg={mu}>{barStr(d.sessionPercent / 100, 8)} </text>{fmtPct(d.sessionPercent)}</text>
+                    </box>
+                    {sessionExpanded() && d.sessionModels && d.sessionModels.length > 0 && (
                       <box flexDirection="column">
-                        <box
-                          flexDirection="row"
-                          justifyContent="space-between"
-                          onMouseDown={() => {
-                            const next = !modelsExpanded()
-                            setModelsExpanded(next)
-                            api.kv?.set?.(KV_MODELS_EXP, next)
-                          }}
-                        >
-                          <text fg={fg}>{modelsExpanded() ? "▼" : "▶"} Session & weekly share</text>
-                        </box>
-                        {modelsExpanded() && (
-                          <box flexDirection="column">
-                            {d.models.map((m) => (
-                              <box flexDirection="row" justifyContent="space-between">
-                                <text fg={mu}>{m.name}</text>
-                                <text fg={fg}>{fmtPct(m.percent)}</text>
-                              </box>
-                            ))}
+                        {d.sessionModels.map((m) => (
+                          <box flexDirection="row" justifyContent="space-between">
+                            <text fg={mu}>{m.name}</text>
+                            <text fg={fg}>{fmtPct(m.percent)}</text>
                           </box>
-                        )}
+                        ))}
                       </box>
                     )}
-
-                    <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{sessionCircle}Session {barStr(d.sessionPercent / 100, 8)} {fmtPct(d.sessionPercent)} used</text>
-                    </box>
                     {d.sessionReset && <text fg={mu}>Reset {fmtTime(d.sessionReset)}</text>}
 
-                    <box flexDirection="row" justifyContent="space-between">
-                      <text fg={fg}>{weeklyCircle}Weekly  {barStr(d.weeklyPercent / 100, 8)} {fmtPct(d.weeklyPercent)} used</text>
+                    <box
+                      flexDirection="row"
+                      justifyContent="space-between"
+                      onMouseDown={() => {
+                        const next = !weeklyExpanded()
+                        setWeeklyExpanded(next)
+                        api.kv?.set?.(KV_WEEKLY_EXP, next)
+                      }}
+                    >
+                      <text fg={fg}>{weeklyExpanded() ? "▼" : "▶"} {weeklyCircle}Weekly</text>
+                      <text fg={fg}><text fg={mu}>{barStr(d.weeklyPercent / 100, 8)} </text>{fmtPct(d.weeklyPercent)}</text>
                     </box>
+                    {weeklyExpanded() && d.weeklyModels && d.weeklyModels.length > 0 && (
+                      <box flexDirection="column">
+                        {d.weeklyModels.map((m) => (
+                          <box flexDirection="row" justifyContent="space-between">
+                            <text fg={mu}>{m.name}</text>
+                            <text fg={fg}>{fmtPct(m.percent)}</text>
+                          </box>
+                        ))}
+                      </box>
+                    )}
                     {d.weeklyReset && <text fg={mu}>Reset {fmtTime(d.weeklyReset)}</text>}
                   </box>
                 )}
