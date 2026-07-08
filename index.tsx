@@ -64,6 +64,7 @@ interface UsageData {
   sessionReset?: string
   weeklyReset?: string
   planTier?: string
+  models?: { name: string; percent: number }[]
 }
 
 const RETRY_DELAYS = [5_000, 15_000, 30_000] as const
@@ -107,6 +108,19 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   const planMatch = html.match(planRe)
   const planTier = planMatch ? planMatch[1].trim() : undefined
 
+  let models: { name: string; percent: number }[] | undefined
+  try {
+    const modelRe = /<(?:td|span|div|p)[^>]*>\s*([^<]{1,40})\s*<\/(?:td|span|div|p)>\s*(?:<(?:td|span|div|p)[^>]*>\s*)?(\d+(?:\.\d+)?)%\s*<\/(?:td|span|div|p)>/gi
+    for (const match of html.matchAll(modelRe)) {
+      const name = match[1].trim()
+      const percent = parseFloat(match[2])
+      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue
+      if (!models) models = []
+      models.push({ name, percent })
+    }
+    if (models && models.length === 0) models = undefined
+  } catch (_err) {}
+
   return {
     data: {
       sessionPercent: sessionPct,
@@ -114,6 +128,7 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
       planTier,
+      models,
     },
   }
 }
@@ -175,6 +190,7 @@ function fmtTime(iso?: string): string {
 
 // ── Plugin ───────────────────────────────────────────────────────────────────
 const KV_EXP = "ollama-cloud:exp"
+const KV_MODELS_EXP = "ollama-cloud:models:exp"
 
 let init = false
 
@@ -213,6 +229,9 @@ const tui: TuiPlugin = async (api) => {
       const [state, setState] = createSignal<State>({ kind: "loading" })
       const [expanded, setExpanded] = createSignal(
         api.kv?.get?.<boolean>(KV_EXP, true) !== false,
+      )
+      const [modelsExpanded, setModelsExpanded] = createSignal(
+        api.kv?.get?.<boolean>(KV_MODELS_EXP, false) !== false,
       )
 
       async function refresh() {
@@ -316,7 +335,7 @@ const tui: TuiPlugin = async (api) => {
                   }}
                 >
                   <text fg={fg}>{e ? "▼" : "▶"} Ollama Cloud{d.planTier ? ` (${d.planTier})` : ""}</text>
-                  <text fg={fg}>{sessionCircle}{fmtPct(d.sessionPercent)}</text>
+                  <text fg={fg}>{!e ? sessionCircle + fmtPct(d.sessionPercent) : ""}</text>
                 </box>
                 {e && (
                   <box flexDirection="column">
@@ -329,6 +348,32 @@ const tui: TuiPlugin = async (api) => {
                       <text fg={fg}>{weeklyCircle}Weekly  {barStr(d.weeklyPercent / 100, 8)} {fmtPct(d.weeklyPercent)} used</text>
                     </box>
                     {d.weeklyReset && <text fg={mu}>Reset {fmtTime(d.weeklyReset)}</text>}
+
+                    {d.models && d.models.length > 0 && (
+                      <box flexDirection="column">
+                        <box
+                          flexDirection="row"
+                          justifyContent="space-between"
+                          onMouseDown={() => {
+                            const next = !modelsExpanded()
+                            setModelsExpanded(next)
+                            api.kv?.set?.(KV_MODELS_EXP, next)
+                          }}
+                        >
+                          <text fg={fg}>{modelsExpanded() ? "▼" : "▶"} Models</text>
+                        </box>
+                        {modelsExpanded() && (
+                          <box flexDirection="column">
+                            {d.models.map((m) => (
+                              <box flexDirection="row" justifyContent="space-between">
+                                <text fg={mu}>{m.name}</text>
+                                <text fg={fg}>{fmtPct(m.percent)}</text>
+                              </box>
+                            ))}
+                          </box>
+                        )}
+                      </box>
+                    )}
                   </box>
                 )}
               </box>

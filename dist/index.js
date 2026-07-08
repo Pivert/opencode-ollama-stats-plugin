@@ -68,13 +68,27 @@ function parseUsageFromHtml(html) {
   const planRe = /class="[^"]*capitalize[^"]*"[^>]*>([^<]*)</;
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
+  let models;
+  try {
+    const modelRe = /<(?:td|span|div|p)[^>]*>\s*([^<]{1,40})\s*<\/(?:td|span|div|p)>\s*(?:<(?:td|span|div|p)[^>]*>\s*)?(\d+(?:\.\d+)?)%\s*<\/(?:td|span|div|p)>/gi;
+    for (const match of html.matchAll(modelRe)) {
+      const name = match[1].trim();
+      const percent = parseFloat(match[2]);
+      if (!name || isNaN(percent) || percent < 0 || percent > 100) continue;
+      if (!models) models = [];
+      models.push({ name, percent });
+    }
+    if (models && models.length === 0) models = void 0;
+  } catch (_err) {
+  }
   return {
     data: {
       sessionPercent: sessionPct,
       weeklyPercent: weeklyPct,
       sessionReset: resetTimes[0],
       weeklyReset: resetTimes[1],
-      planTier
+      planTier,
+      models
     }
   };
 }
@@ -126,6 +140,7 @@ function fmtTime(iso) {
   }
 }
 var KV_EXP = "ollama-cloud:exp";
+var KV_MODELS_EXP = "ollama-cloud:models:exp";
 var init = false;
 var tui = async (api) => {
   if (init) return;
@@ -156,6 +171,9 @@ var tui = async (api) => {
       const [state, setState] = createSignal({ kind: "loading" });
       const [expanded, setExpanded] = createSignal(
         api.kv?.get?.(KV_EXP, true) !== false
+      );
+      const [modelsExpanded, setModelsExpanded] = createSignal(
+        api.kv?.get?.(KV_MODELS_EXP, false) !== false
       );
       async function refresh() {
         const resolved = await resolveCookie();
@@ -244,10 +262,7 @@ var tui = async (api) => {
                       " Ollama Cloud",
                       d.planTier ? ` (${d.planTier})` : ""
                     ] }),
-                    /* @__PURE__ */ jsxs("text", { fg, children: [
-                      sessionCircle,
-                      fmtPct(d.sessionPercent)
-                    ] })
+                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + fmtPct(d.sessionPercent) : "" })
                   ]
                 }
               ),
@@ -275,6 +290,28 @@ var tui = async (api) => {
                 d.weeklyReset && /* @__PURE__ */ jsxs("text", { fg: mu, children: [
                   "Reset ",
                   fmtTime(d.weeklyReset)
+                ] }),
+                d.models && d.models.length > 0 && /* @__PURE__ */ jsxs("box", { flexDirection: "column", children: [
+                  /* @__PURE__ */ jsx(
+                    "box",
+                    {
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      onMouseDown: () => {
+                        const next = !modelsExpanded();
+                        setModelsExpanded(next);
+                        api.kv?.set?.(KV_MODELS_EXP, next);
+                      },
+                      children: /* @__PURE__ */ jsxs("text", { fg, children: [
+                        modelsExpanded() ? "\u25BC" : "\u25B6",
+                        " Models"
+                      ] })
+                    }
+                  ),
+                  modelsExpanded() && /* @__PURE__ */ jsx("box", { flexDirection: "column", children: d.models.map((m) => /* @__PURE__ */ jsxs("box", { flexDirection: "row", justifyContent: "space-between", children: [
+                    /* @__PURE__ */ jsx("text", { fg: mu, children: m.name }),
+                    /* @__PURE__ */ jsx("text", { fg, children: fmtPct(m.percent) })
+                  ] })) })
                 ] })
               ] })
             ] });
