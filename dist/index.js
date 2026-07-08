@@ -315,7 +315,7 @@ var tui = async (api) => {
                       " Ollama Cloud",
                       d.planTier ? ` (${d.planTier})` : ""
                     ] }),
-                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? " AR" : "  B") + " " + d.balance : "" })
+                    /* @__PURE__ */ jsx("text", { fg, children: !e ? sessionCircle + "S " + fmtPct(d.sessionPercent) : d.balance ? (d.autoReload ? "  AR" : "   B") + " " + d.balance : "" })
                   ]
                 }
               ),
