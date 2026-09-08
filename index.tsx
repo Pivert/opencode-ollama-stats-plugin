@@ -40,8 +40,17 @@ async function resolveCookie(): Promise<{ result?: CookieResult; error?: string 
 
       let cookie: string | null = null
       if (type === "json") {
-        const parsed = JSON.parse(content)
-        cookie = typeof parsed.cookie === "string" ? parsed.cookie.trim() : null
+        try {
+          const parsed = JSON.parse(content)
+          if (typeof parsed === "string") {
+            cookie = parsed.trim()
+          } else if (parsed && typeof parsed.cookie === "string") {
+            cookie = parsed.cookie.trim()
+          }
+        } catch {
+          // Not valid JSON — treat the raw file content as the cookie value
+          cookie = content.trim()
+        }
       } else {
         cookie = readYamlCookie(content)
       }

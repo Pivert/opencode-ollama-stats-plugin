@@ -24,8 +24,16 @@ async function resolveCookie() {
       const content = await fs.readFile(path, "utf-8");
       let cookie = null;
       if (type === "json") {
-        const parsed = JSON.parse(content);
-        cookie = typeof parsed.cookie === "string" ? parsed.cookie.trim() : null;
+        try {
+          const parsed = JSON.parse(content);
+          if (typeof parsed === "string") {
+            cookie = parsed.trim();
+          } else if (parsed && typeof parsed.cookie === "string") {
+            cookie = parsed.cookie.trim();
+          }
+        } catch {
+          cookie = content.trim();
+        }
       } else {
         cookie = readYamlCookie(content);
       }

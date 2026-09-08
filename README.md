@@ -14,8 +14,6 @@ Ollama Cloud (pro)          S 58.3%
 
 See [INSTALL.md](./INSTALL.md) for setup and cookie configuration instructions.
 
-> [Leer en español](./README.es.md) · [Instalación en español](./INSTALL.es.md)
-
 ## How it works
 
 The plugin fetches your Ollama Cloud settings page using a `__Secure-session` cookie and parses the HTML for:

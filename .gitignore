@@ -3,4 +3,7 @@ node_modules/
 *.log
 .DS_Store
 .opencode/
+.sisyphus/
+.opencode_archive/
+tui.json
 
