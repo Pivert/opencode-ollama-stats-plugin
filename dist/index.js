@@ -100,9 +100,10 @@ function parseUsageFromHtml(html) {
   const planRe = /class="[^"]*capitalize[^"]*"[^>]*>([^<]*)</;
   const planMatch = html.match(planRe);
   const planTier = planMatch ? planMatch[1].trim() : void 0;
-  const balanceM = html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/);
+  const balanceM = html.match(/id="extra-usage-balance"[^>]*>\s*\$([\d.]+)/) || html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/);
   const balance = balanceM ? "$" + balanceM[1] : void 0;
-  const autoReload = /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html);
+  const autoReloadM = html.match(/id="extra-usage-reload-toggle"[\s\S]*?aria-checked="(true|false)"/);
+  const autoReload = autoReloadM ? autoReloadM[1] === "true" : /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html);
   function parseModels(html2, totalPct) {
     const buttonRe = /<button[\s\S]*?<\/button>/gi;
     const seen = /* @__PURE__ */ new Set();

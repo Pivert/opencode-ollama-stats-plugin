@@ -155,9 +155,19 @@ function parseUsageFromHtml(html: string): { data?: UsageData; error?: string } 
   const planTier = planMatch ? planMatch[1].trim() : undefined
 
   // Balance and auto-reload
-  const balanceM = html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/)
+  // New markup: <div id="extra-usage-balance" ...>$0.41</div>
+  // Old markup: <div ...>Balance remaining</div> ... >$0.41
+  const balanceM =
+    html.match(/id="extra-usage-balance"[^>]*>\s*\$([\d.]+)/) ||
+    html.match(/Balance remaining<\/div>[\s\S]*?>\$([\d.]+)/)
   const balance = balanceM ? "$" + balanceM[1] : undefined
-  const autoReload = /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html)
+
+  // New markup: <button id="extra-usage-reload-toggle" ... aria-checked="false">
+  // Old markup: <input name="enabled" ... checked>
+  const autoReloadM = html.match(/id="extra-usage-reload-toggle"[\s\S]*?aria-checked="(true|false)"/)
+  const autoReload = autoReloadM
+    ? autoReloadM[1] === "true"
+    : /name="enabled"[\s\S]*?["\s]checked["\s]/.test(html)
 
   // Parse per-model usage from data-usage-segment buttons
   // Each <button> has style="width: X%", data-usage-segment, data-model
